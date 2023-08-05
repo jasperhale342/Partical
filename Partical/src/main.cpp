@@ -1,30 +1,57 @@
 #include <iostream>
 #include <fstream>
 #include <SDL.h>
+#include "screen.h"
+#include "Swarm.h"
+#include <math.h>
+#include <stdlib.h>
+#include <time.h>
 #undef main
 using namespace std;
+using namespace particle;
 
 int main(int argc, char* argv[])
 {
-	//SDL_SetMainReady();
-	//SDL_SetError(SDL_ENABLE);
-	const int SCREEN_WIDTH = 800;
-	const int SCREEN_HEIGHT = 600;
-	
-	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-	{
-		cout << "SDL initialization failed. SDL Error: " << SDL_GetError();
-	}
-	SDL_Window* window = NULL;
-	window  = SDL_CreateWindow("Particle Fire Explosion", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+	srand(time(NULL));
 
-	
-	if (window == NULL) {
-		SDL_Quit();
-		cout << "could not create window" << SDL_GetError() << endl;
-		return 1;
+	Screen screen;
+
+	if (!screen.init()) {
+		cout << "error initializing SDL" << endl;
 	}
-	
-	SDL_DestroyWindow(window);
+
+	Swarm swarm;
+
+	int max = 0;
+	while (true) {
+
+		int elapsed = SDL_GetTicks();
+		//screen.clear();
+		swarm.update(elapsed);
+		unsigned char green = (1 + sin(elapsed * 0.001)) * 128;
+		unsigned char red = (1 + sin(elapsed * 0.002)) * 128;
+		unsigned char blue = (1 + sin(elapsed * 0.003)) * 128;
+
+		const Particle* const pParticles = swarm.getParticles();
+
+		for (int i = 0; i < Swarm::NPARTICLE; i++) {
+			Particle particle = pParticles[i];
+			
+			int x = (particle.m_x + 1) * Screen::SCREEN_WIDTH / 2;
+			int y = particle.m_y  * Screen::SCREEN_WIDTH / 2 + Screen::SCREEN_HEIGHT/2;
+
+			screen.setPixel(x, y, red, green, blue);
+		}
+
+		screen.boxBlur();
+		screen.update();
+
+		if (!screen.processEvents()) {
+			break;
+		}
+		
+	}
+
+	screen.close();
 	return 0;
 }
